@@ -1,0 +1,21 @@
+{
+  "name": "voidwalker",
+  "private": true,
+  "workspaces": [
+    "packages/shared",
+    "packages/mcp-server",
+    "packages/extension",
+    "packages/gemini-client"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev:server": "npm run dev --workspace=packages/mcp-server",
+    "dev:extension": "npm run dev --workspace=packages/extension",
+    "dev:client": "npm run dev --workspace=packages/gemini-client",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}
