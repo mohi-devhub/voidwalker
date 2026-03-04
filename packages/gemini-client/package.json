@@ -1,5 +1,22 @@
 {
-  "name": "@voidwalker/gemini-client",
+  "name": "@voidwalker/cli",
   "version": "0.0.1",
-  "private": true
+  "private": true,
+  "type": "module",
+  "bin": {
+    "voidwalker": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@voidwalker/shared": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.0"
+  }
 }
