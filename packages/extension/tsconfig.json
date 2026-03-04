@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noEmit": true,
+    "paths": {
+      "@voidwalker/shared": ["../shared/src/index.ts"]
+    }
+  },
+  "include": ["src", "manifest.config.ts", "vite.config.ts"]
+}
