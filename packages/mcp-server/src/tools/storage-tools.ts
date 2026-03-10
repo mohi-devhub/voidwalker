@@ -5,6 +5,10 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import type { StateStore } from "../state-store.js";
 import { getDomMutationsTool, handleGetDomMutations } from "./mutations-tool.js";
+import {
+  searchStorageTool, searchIndexedDBTool, decodeStorageValueTool, diffStorageTool,
+  handleSearchStorage, handleSearchIndexedDB, handleDecodeStorageValue, handleDiffStorage,
+} from "./read-tools.js";
 
 export function registerStorageTools(server: Server, stateStore: StateStore): void {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -85,6 +89,10 @@ export function registerStorageTools(server: Server, stateStore: StateStore): vo
         },
       },
       getDomMutationsTool,
+      searchStorageTool,
+      searchIndexedDBTool,
+      decodeStorageValueTool,
+      diffStorageTool,
     ],
   }));
 
@@ -205,9 +213,15 @@ export function registerStorageTools(server: Server, stateStore: StateStore): vo
       }
 
       case "get_dom_mutations":
-        return {
-          content: [{ type: "text", text: handleGetDomMutations(stateStore, args as Record<string, unknown>) }],
-        };
+        return { content: [{ type: "text", text: handleGetDomMutations(stateStore, args as Record<string, unknown>) }] };
+      case "search_storage":
+        return { content: [{ type: "text", text: handleSearchStorage(stateStore, args as Record<string, unknown>) }] };
+      case "search_indexeddb":
+        return { content: [{ type: "text", text: handleSearchIndexedDB(stateStore, args as Record<string, unknown>) }] };
+      case "decode_storage_value":
+        return { content: [{ type: "text", text: handleDecodeStorageValue(stateStore, args as Record<string, unknown>) }] };
+      case "diff_storage":
+        return { content: [{ type: "text", text: handleDiffStorage(stateStore, args as Record<string, unknown>) }] };
 
       default:
         return {
