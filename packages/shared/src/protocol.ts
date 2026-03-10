@@ -242,14 +242,62 @@ export type ExtensionMessage =
   | TabNavigatedMessage
   | TabOpenedMessage;
 
+// ─── Server → Extension commands ──────────────────────────────────────────────
+
+export interface CmdSetStorageMessage {
+  type: "cmd_set_storage";
+  seq: number;
+  ts: number;
+  tabId: number;
+  origin: string;
+  storageType: "localStorage" | "sessionStorage";
+  key: string;
+  value: string;
+}
+
+export interface CmdDeleteStorageMessage {
+  type: "cmd_delete_storage";
+  seq: number;
+  ts: number;
+  tabId: number;
+  origin: string;
+  storageType: "localStorage" | "sessionStorage";
+  key: string;
+}
+
+export interface CmdDeleteIndexedDBMessage {
+  type: "cmd_delete_indexeddb";
+  seq: number;
+  ts: number;
+  tabId: number;
+  origin: string;
+  dbName: string;
+  storeName: string;
+  key: string; // JSON-serialized IDB key
+}
+
+export interface CmdNavigateTabMessage {
+  type: "cmd_navigate_tab";
+  seq: number;
+  ts: number;
+  tabId: number;
+  url: string;
+}
+
+export interface RequestSnapshotMessage {
+  type: "request_snapshot";
+  seq: number;
+  ts: number;
+  tabId: number;
+  target: "localstorage" | "sessionstorage" | "indexeddb" | "cookies" | "all";
+}
+
 export type ServerMessage =
   | AuthOkMessage
   | AuthErrorMessage
   | PongMessage
-  | {
-      type: "request_snapshot";
-      seq: number;
-      ts: number;
-      tabId: number;
-      target: "localstorage" | "sessionstorage" | "indexeddb" | "cookies" | "all";
-    };
+  | RequestSnapshotMessage
+  | CmdSetStorageMessage
+  | CmdDeleteStorageMessage
+  | CmdDeleteIndexedDBMessage
+  | CmdNavigateTabMessage;

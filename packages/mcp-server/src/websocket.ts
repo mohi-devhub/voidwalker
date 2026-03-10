@@ -5,10 +5,20 @@ import type { ExtensionMessage } from "@voidwalker/shared";
 
 const SERVER_VERSION = "0.0.1";
 
+// Track the currently authenticated extension connection (one at a time)
+let activeSocket: WebSocket | null = null;
+
 function send(ws: WebSocket, msg: Record<string, unknown>): void {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(msg));
   }
+}
+
+/** Send a command to the connected extension. Returns false if no extension is connected. */
+export function sendCommand(msg: Record<string, unknown>): boolean {
+  if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) return false;
+  activeSocket.send(JSON.stringify(msg));
+  return true;
 }
 
 export function attachWebSocketServer(
@@ -44,6 +54,7 @@ export function attachWebSocketServer(
         }
         clearTimeout(authTimer);
         authenticated = true;
+        activeSocket = ws;
         send(ws, { type: "auth_ok", seq: serverSeq++, ts: Date.now(), serverVersion: SERVER_VERSION });
         process.stderr.write("[ws] Extension connected\n");
         return;
@@ -63,7 +74,10 @@ export function attachWebSocketServer(
 
     ws.on("close", () => {
       clearTimeout(authTimer);
-      if (authenticated) process.stderr.write("[ws] Extension disconnected\n");
+      if (authenticated) {
+        if (activeSocket === ws) activeSocket = null;
+        process.stderr.write("[ws] Extension disconnected\n");
+      }
     });
 
     ws.on("error", (err) => process.stderr.write(`[ws] Socket error: ${err}\n`));

@@ -281,4 +281,14 @@ export class StateStore extends EventEmitter {
     this.tabs.delete(tabId);
     this.emit("tab_removed", tabId);
   }
+
+  clearOrigin(tabId: number, origin: string): void {
+    this.tabs.get(tabId)?.byOrigin.delete(origin);
+    this.emit("origin_updated", tabId, origin);
+  }
+
+  clearAll(): void {
+    this.tabs.clear();
+    this.emit("all_cleared");
+  }
 }
