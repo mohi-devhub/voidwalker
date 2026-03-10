@@ -179,6 +179,12 @@ export interface SnapshotLocalStorageMessage extends BaseMessage {
   entries: Record<string, string>;
 }
 
+export interface SnapshotSessionStorageMessage extends BaseMessage {
+  type: "snapshot_sessionstorage";
+  meta: EventMeta;
+  entries: Record<string, string>;
+}
+
 export interface SnapshotIndexedDBMessage extends BaseMessage {
   type: "snapshot_indexeddb";
   meta: EventMeta;
@@ -230,6 +236,7 @@ export type ExtensionMessage =
   | CookieRemovedMessage
   | DomMutationMessage
   | SnapshotLocalStorageMessage
+  | SnapshotSessionStorageMessage
   | SnapshotIndexedDBMessage
   | TabClosedMessage
   | TabNavigatedMessage

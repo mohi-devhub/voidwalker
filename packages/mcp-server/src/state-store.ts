@@ -85,6 +85,13 @@ export class StateStore extends EventEmitter {
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
+      case "snapshot_sessionstorage": {
+        const os = this.ensureOrigin(msg.meta.tabId, msg.meta.origin, msg.meta.url);
+        os.sessionStorage.entries = new Map(Object.entries(msg.entries));
+        os.sessionStorage.lastUpdated = new Date().toISOString();
+        this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
+        break;
+      }
 
       // ── IndexedDB ─────────────────────────────────────────────────────────────
       case "indexeddb_put": {
