@@ -5,20 +5,45 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import type { StateStore } from "../state-store.js";
 
-// Matches: browser://tabs/{tabId}/origins/{encodedOrigin}/localstorage
+// URI patterns
 const LS_URI_RE = /^browser:\/\/tabs\/(\d+)\/origins\/([^/]+)\/localstorage$/;
+const SS_URI_RE = /^browser:\/\/tabs\/(\d+)\/origins\/([^/]+)\/sessionstorage$/;
+const IDB_URI_RE = /^browser:\/\/tabs\/(\d+)\/origins\/([^/]+)\/indexeddb$/;
+const COOKIES_URI_RE = /^browser:\/\/tabs\/(\d+)\/origins\/([^/]+)\/cookies$/;
 
 export function registerStorageResources(server: Server, stateStore: StateStore): void {
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     const dynamic = [];
     for (const tab of stateStore.getAllTabs()) {
       for (const [, os] of tab.byOrigin) {
-        dynamic.push({
-          uri: `browser://tabs/${tab.tabId}/origins/${encodeURIComponent(os.origin)}/localstorage`,
-          name: `localStorage · ${os.origin} (tab ${tab.tabId})`,
-          description: `localStorage entries for origin ${os.origin} in tab ${tab.tabId}`,
-          mimeType: "application/json",
-        });
+        const enc = encodeURIComponent(os.origin);
+        const base = `browser://tabs/${tab.tabId}/origins/${enc}`;
+        dynamic.push(
+          {
+            uri: `${base}/localstorage`,
+            name: `localStorage · ${os.origin} (tab ${tab.tabId})`,
+            description: `localStorage entries for origin ${os.origin} in tab ${tab.tabId}`,
+            mimeType: "application/json",
+          },
+          {
+            uri: `${base}/sessionstorage`,
+            name: `sessionStorage · ${os.origin} (tab ${tab.tabId})`,
+            description: `sessionStorage entries for origin ${os.origin} in tab ${tab.tabId}`,
+            mimeType: "application/json",
+          },
+          {
+            uri: `${base}/indexeddb`,
+            name: `IndexedDB · ${os.origin} (tab ${tab.tabId})`,
+            description: `IndexedDB databases and records for origin ${os.origin} in tab ${tab.tabId}`,
+            mimeType: "application/json",
+          },
+          {
+            uri: `${base}/cookies`,
+            name: `Cookies · ${os.origin} (tab ${tab.tabId})`,
+            description: `Cookies for origin ${os.origin} in tab ${tab.tabId}`,
+            mimeType: "application/json",
+          },
+        );
       }
     }
     return {
@@ -58,7 +83,7 @@ export function registerStorageResources(server: Server, stateStore: StateStore)
     }
 
     // browser://tabs/{tabId}/origins/{origin}/localstorage
-    const m = LS_URI_RE.exec(uri);
+    let m = LS_URI_RE.exec(uri);
     if (m) {
       const tabId = parseInt(m[1]!, 10);
       const origin = decodeURIComponent(m[2]!);
@@ -70,13 +95,82 @@ export function registerStorageResources(server: Server, stateStore: StateStore)
             uri,
             mimeType: "application/json",
             text: JSON.stringify(
-              {
-                tabId,
-                origin,
-                entries,
-                entryCount: Object.keys(entries).length,
-                lastUpdated: os?.localStorage.lastUpdated ?? null,
-              },
+              { tabId, origin, entries, entryCount: Object.keys(entries).length, lastUpdated: os?.localStorage.lastUpdated ?? null },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }
+
+    // browser://tabs/{tabId}/origins/{origin}/sessionstorage
+    m = SS_URI_RE.exec(uri);
+    if (m) {
+      const tabId = parseInt(m[1]!, 10);
+      const origin = decodeURIComponent(m[2]!);
+      const os = stateStore.getOriginState(tabId, origin);
+      const entries = os ? Object.fromEntries(os.sessionStorage.entries) : {};
+      return {
+        contents: [
+          {
+            uri,
+            mimeType: "application/json",
+            text: JSON.stringify(
+              { tabId, origin, entries, entryCount: Object.keys(entries).length, lastUpdated: os?.sessionStorage.lastUpdated ?? null },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }
+
+    // browser://tabs/{tabId}/origins/{origin}/indexeddb
+    m = IDB_URI_RE.exec(uri);
+    if (m) {
+      const tabId = parseInt(m[1]!, 10);
+      const origin = decodeURIComponent(m[2]!);
+      const os = stateStore.getOriginState(tabId, origin);
+      const databases: Record<string, unknown> = {};
+      if (os) {
+        for (const [dbName, db] of os.indexedDB) {
+          const stores: Record<string, unknown> = {};
+          for (const [storeName, store] of db.stores) {
+            stores[storeName] = {
+              records: Object.fromEntries(store.records),
+              recordCount: store.records.size,
+              lastUpdated: store.lastUpdated,
+            };
+          }
+          databases[dbName] = { stores, lastUpdated: db.lastUpdated };
+        }
+      }
+      return {
+        contents: [
+          {
+            uri,
+            mimeType: "application/json",
+            text: JSON.stringify({ tabId, origin, databases }, null, 2),
+          },
+        ],
+      };
+    }
+
+    // browser://tabs/{tabId}/origins/{origin}/cookies
+    m = COOKIES_URI_RE.exec(uri);
+    if (m) {
+      const tabId = parseInt(m[1]!, 10);
+      const origin = decodeURIComponent(m[2]!);
+      const os = stateStore.getOriginState(tabId, origin);
+      const cookies = os ? Array.from(os.cookies.entries.values()) : [];
+      return {
+        contents: [
+          {
+            uri,
+            mimeType: "application/json",
+            text: JSON.stringify(
+              { tabId, origin, cookies, cookieCount: cookies.length, lastUpdated: os?.cookies.lastUpdated ?? null },
               null,
               2,
             ),
