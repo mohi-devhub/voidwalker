@@ -29,14 +29,16 @@ function printJson(data: unknown) {
 // ─── Help text ────────────────────────────────────────────────────────────────
 const HELP = `
 ${bold("Commands:")}
-  ${cyan("resources")}                 List all available MCP resources
-  ${cyan("tabs")}                      Read browser://tabs  (all open tabs + origins)
-  ${cyan("ls")} ${yellow("<tabId> <origin>")}    Read localStorage for a specific tab+origin
-                             e.g. ${dim("ls 1 https://localhost:3000")}
-  ${cyan("read")} ${yellow("<uri>")}              Read any MCP resource by URI
-                             e.g. ${dim("read browser://tabs/1/origins/https%3A%2F%2Flocalhost%3A3000/localstorage")}
-  ${cyan("help")}                      Show this help
-  ${cyan("exit")}                      Quit
+  ${cyan("resources")}                        List all available MCP resources
+  ${cyan("tabs")}                             Read browser://tabs  (all open tabs + origins)
+  ${cyan("ls")} ${yellow("<tabId> <origin>")}           Read localStorage for a specific tab+origin
+                                    e.g. ${dim("ls 1 https://localhost:3000")}
+  ${cyan("mutations")} ${yellow("<tabId> [origin]")}    Recent DOM mutation events for a tab
+                                    e.g. ${dim("mutations 1 https://localhost:3000")}
+  ${cyan("read")} ${yellow("<uri>")}                    Read any MCP resource by URI
+                                    e.g. ${dim("read browser://tabs/1/events")}
+  ${cyan("help")}                             Show this help
+  ${cyan("exit")}                             Quit
 `;
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -104,6 +106,20 @@ async function main(): Promise<void> {
             const uri = `browser://tabs/${tabId}/origins/${encodeURIComponent(origin!)}/localstorage`;
             const data = await bridge.readResource(uri);
             console.log(`\n${bold(`localStorage`)} ${dim(`tab ${tabId} · ${origin}`)}`);
+            printJson(data);
+            break;
+          }
+
+          // ── DOM mutations ─────────────────────────────────────────────────
+          case "mutations": {
+            if (!args[0]) { err("Usage: mutations <tabId> [origin]"); break; }
+            const tabId = parseInt(args[0], 10);
+            const origin = args[1];
+            const toolArgs: Record<string, unknown> = { tabId };
+            if (origin) toolArgs["origin"] = origin;
+            const data = await bridge.callTool("get_dom_mutations", toolArgs);
+            const label = origin ? `Mutations · tab ${tabId} · ${origin}` : `Mutations · tab ${tabId}`;
+            console.log(`\n${bold(label)}`);
             printJson(data);
             break;
           }

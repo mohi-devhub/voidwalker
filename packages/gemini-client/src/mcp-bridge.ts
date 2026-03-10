@@ -37,6 +37,16 @@ export class McpBridge {
     return "text" in content ? content.text : null;
   }
 
+  async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+    const result = await this.client.callTool({ name, arguments: args });
+    const content = (result.content as Array<{ type: string; text?: string }>)[0];
+    if (!content) return null;
+    if (content.type === "text" && content.text) {
+      try { return JSON.parse(content.text); } catch { return content.text; }
+    }
+    return null;
+  }
+
   async close(): Promise<void> {
     await this.client.close();
   }

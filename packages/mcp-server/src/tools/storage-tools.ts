@@ -4,6 +4,7 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { StateStore } from "../state-store.js";
+import { getDomMutationsTool, handleGetDomMutations } from "./mutations-tool.js";
 
 export function registerStorageTools(server: Server, stateStore: StateStore): void {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -83,6 +84,7 @@ export function registerStorageTools(server: Server, stateStore: StateStore): vo
           required: ["tabId", "origin"],
         },
       },
+      getDomMutationsTool,
     ],
   }));
 
@@ -201,6 +203,11 @@ export function registerStorageTools(server: Server, stateStore: StateStore): vo
           ],
         };
       }
+
+      case "get_dom_mutations":
+        return {
+          content: [{ type: "text", text: handleGetDomMutations(stateStore, args as Record<string, unknown>) }],
+        };
 
       default:
         return {
