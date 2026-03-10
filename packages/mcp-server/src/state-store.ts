@@ -1,5 +1,45 @@
 import { EventEmitter } from "node:events";
-import type { ExtensionMessage, SerializableCookie } from "@voidwalker/shared";
+import type { ExtensionMessage, SerializableCookie, DomMutationRecord } from "@voidwalker/shared";
+import { MUTATION_RING_SIZE } from "@voidwalker/shared";
+
+// ── CircularBuffer ────────────────────────────────────────────────────────────
+// Fixed-capacity ring buffer. Oldest entries are overwritten when full.
+export class CircularBuffer<T> {
+  private buf: T[] = [];
+  private head = 0; // next write position
+
+  constructor(private readonly capacity: number) {}
+
+  push(item: T): void {
+    if (this.buf.length < this.capacity) {
+      this.buf.push(item);
+    } else {
+      this.buf[this.head] = item;
+    }
+    this.head = (this.head + 1) % this.capacity;
+  }
+
+  /** Returns entries in insertion order (oldest first). */
+  toArray(): T[] {
+    if (this.buf.length < this.capacity) return this.buf.slice();
+    return [...this.buf.slice(this.head), ...this.buf.slice(0, this.head)];
+  }
+
+  get size(): number {
+    return this.buf.length;
+  }
+
+  clear(): void {
+    this.buf = [];
+    this.head = 0;
+  }
+}
+
+export interface StoredMutation {
+  ts: string; // ISO timestamp when received by the server
+  url: string;
+  mutations: DomMutationRecord[];
+}
 
 export interface IDBStoreState {
   records: Map<string, string>; // serialized key → serialized value
@@ -17,6 +57,7 @@ export interface OriginState {
   sessionStorage: { entries: Map<string, string>; lastUpdated: string };
   indexedDB: Map<string, IDBDatabaseState>; // dbName → db state
   cookies: { entries: Map<string, SerializableCookie>; lastUpdated: string };
+  mutations: CircularBuffer<StoredMutation>;
 }
 
 export interface TabState {
@@ -163,6 +204,14 @@ export class StateStore extends EventEmitter {
         break;
       }
 
+      // ── DOM Mutations ─────────────────────────────────────────────────────────
+      case "dom_mutation": {
+        const os = this.ensureOrigin(msg.meta.tabId, msg.meta.origin, msg.meta.url);
+        os.mutations.push({ ts: new Date().toISOString(), url: msg.meta.url, mutations: msg.mutations });
+        this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
+        break;
+      }
+
       // ── Tab lifecycle ─────────────────────────────────────────────────────────
       case "tab_closed":
         this.clearTab(msg.tabId);
@@ -209,6 +258,7 @@ export class StateStore extends EventEmitter {
         sessionStorage: { entries: new Map(), lastUpdated: now },
         indexedDB: new Map(),
         cookies: { entries: new Map(), lastUpdated: now },
+        mutations: new CircularBuffer<StoredMutation>(MUTATION_RING_SIZE),
       };
       tab.byOrigin.set(origin, os);
     }
