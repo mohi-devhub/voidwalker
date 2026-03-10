@@ -29,16 +29,21 @@ function printJson(data: unknown) {
 // ─── Help text ────────────────────────────────────────────────────────────────
 const HELP = `
 ${bold("Commands:")}
-  ${cyan("resources")}                        List all available MCP resources
-  ${cyan("tabs")}                             Read browser://tabs  (all open tabs + origins)
-  ${cyan("ls")} ${yellow("<tabId> <origin>")}           Read localStorage for a specific tab+origin
-                                    e.g. ${dim("ls 1 https://localhost:3000")}
-  ${cyan("mutations")} ${yellow("<tabId> [origin]")}    Recent DOM mutation events for a tab
-                                    e.g. ${dim("mutations 1 https://localhost:3000")}
-  ${cyan("read")} ${yellow("<uri>")}                    Read any MCP resource by URI
-                                    e.g. ${dim("read browser://tabs/1/events")}
-  ${cyan("help")}                             Show this help
-  ${cyan("exit")}                             Quit
+  ${cyan("resources")}                              List all available MCP resources
+  ${cyan("tabs")}                                   Read browser://tabs (all open tabs + origins)
+  ${cyan("ls")} ${yellow("<tabId> <origin>")}               Read localStorage for a tab+origin
+  ${cyan("search")} ${yellow("<tabId> <origin> <pattern>")} Search localStorage+sessionStorage by value
+  ${cyan("diff")} ${yellow("<tabId> <origin>")}             Diff localStorage against a stored baseline
+  ${cyan("decode")} ${yellow("<tabId> <origin> <key>")}     Decode a storage value (JWT/base64/JSON)
+  ${cyan("set")} ${yellow("<tabId> <origin> <k> <v>")}      Write a localStorage key in the browser
+  ${cyan("del")} ${yellow("<tabId> <origin> <key>")}        Delete a localStorage key in the browser
+  ${cyan("navigate")} ${yellow("<tabId> <url>")}            Navigate a tab to a URL
+  ${cyan("snapshot")} ${yellow("<tabId>")}                  Request a fresh storage snapshot
+  ${cyan("mutations")} ${yellow("<tabId> [origin]")}        Recent DOM mutation events for a tab
+  ${cyan("read")} ${yellow("<uri>")}                        Read any MCP resource by URI
+  ${cyan("tool")} ${yellow("<name> <json-args>")}           Call any MCP tool with JSON args
+  ${cyan("help")}                                   Show this help
+  ${cyan("exit")}                                   Quit
 `;
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -108,6 +113,76 @@ async function main(): Promise<void> {
             console.log(`\n${bold(`localStorage`)} ${dim(`tab ${tabId} · ${origin}`)}`);
             printJson(data);
             break;
+          }
+
+          // ── Search storage ────────────────────────────────────────────────
+          case "search": {
+            if (args.length < 3) { err("Usage: search <tabId> <origin> <valuePattern>"); break; }
+            const [tabId, origin, ...rest] = args;
+            const data = await bridge.callTool("search_storage", { tabId: parseInt(tabId!, 10), origin, valuePattern: rest.join(" ") });
+            console.log(`\n${bold("Search results")}`); printJson(data); break;
+          }
+
+          // ── Diff storage ──────────────────────────────────────────────────
+          case "diff": {
+            if (args.length < 2) { err("Usage: diff <tabId> <origin>"); break; }
+            const [tabId, origin] = args;
+            // Capture baseline first
+            const baseline = await bridge.callTool("read_storage", { tabId: parseInt(tabId!, 10), origin, storageType: "localStorage" }) as { entries?: Record<string, string> };
+            info("Baseline captured. Press Enter after your action to see the diff…");
+            await new Promise<void>((resolve) => rl.once("line", () => resolve()));
+            const data = await bridge.callTool("diff_storage", { tabId: parseInt(tabId!, 10), origin, storageType: "localStorage", baseline: baseline?.entries ?? {} });
+            console.log(`\n${bold("Diff")}`); printJson(data); break;
+          }
+
+          // ── Decode storage value ──────────────────────────────────────────
+          case "decode": {
+            if (args.length < 3) { err("Usage: decode <tabId> <origin> <key>"); break; }
+            const [tabId, origin, key] = args;
+            const data = await bridge.callTool("decode_storage_value", { tabId: parseInt(tabId!, 10), origin, storageType: "localStorage", key });
+            console.log(`\n${bold("Decoded")}`); printJson(data); break;
+          }
+
+          // ── Set storage ───────────────────────────────────────────────────
+          case "set": {
+            if (args.length < 4) { err("Usage: set <tabId> <origin> <key> <value>"); break; }
+            const [tabId, origin, key, ...valParts] = args;
+            const data = await bridge.callTool("set_storage", { tabId: parseInt(tabId!, 10), origin, storageType: "localStorage", key, value: valParts.join(" ") });
+            printJson(data); break;
+          }
+
+          // ── Delete storage ────────────────────────────────────────────────
+          case "del":
+          case "delete": {
+            if (args.length < 3) { err("Usage: del <tabId> <origin> <key>"); break; }
+            const [tabId, origin, key] = args;
+            const data = await bridge.callTool("delete_storage", { tabId: parseInt(tabId!, 10), origin, storageType: "localStorage", key });
+            printJson(data); break;
+          }
+
+          // ── Navigate tab ──────────────────────────────────────────────────
+          case "navigate": {
+            if (args.length < 2) { err("Usage: navigate <tabId> <url>"); break; }
+            const [tabId, url] = args;
+            const data = await bridge.callTool("navigate_tab", { tabId: parseInt(tabId!, 10), url });
+            printJson(data); break;
+          }
+
+          // ── Request snapshot ──────────────────────────────────────────────
+          case "snapshot": {
+            if (!args[0]) { err("Usage: snapshot <tabId>"); break; }
+            const data = await bridge.callTool("request_snapshot", { tabId: parseInt(args[0], 10), target: "all" });
+            printJson(data); break;
+          }
+
+          // ── Generic tool call ─────────────────────────────────────────────
+          case "tool": {
+            if (args.length < 2) { err('Usage: tool <name> <json-args>  e.g. tool search_storage \'{"tabId":1,"origin":"https://example.com","valuePattern":"eyJ"}\''); break; }
+            const [toolName, ...jsonParts] = args;
+            let toolArgs: Record<string, unknown> = {};
+            try { toolArgs = JSON.parse(jsonParts.join(" ")) as Record<string, unknown>; } catch { err("Invalid JSON args"); break; }
+            const data = await bridge.callTool(toolName!, toolArgs);
+            console.log(`\n${bold(toolName!)}`); printJson(data); break;
           }
 
           // ── DOM mutations ─────────────────────────────────────────────────
