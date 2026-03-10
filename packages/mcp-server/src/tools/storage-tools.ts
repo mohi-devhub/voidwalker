@@ -9,6 +9,12 @@ import {
   searchStorageTool, searchIndexedDBTool, decodeStorageValueTool, diffStorageTool,
   handleSearchStorage, handleSearchIndexedDB, handleDecodeStorageValue, handleDiffStorage,
 } from "./read-tools.js";
+import {
+  setStorageTool, deleteStorageTool, deleteIndexedDBTool, requestSnapshotTool,
+  clearServerStateTool, navigateTabTool,
+  handleSetStorage, handleDeleteStorage, handleDeleteIndexedDB,
+  handleRequestSnapshot, handleClearServerState, handleNavigateTab,
+} from "./write-tools.js";
 
 export function registerStorageTools(server: Server, stateStore: StateStore): void {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -93,6 +99,12 @@ export function registerStorageTools(server: Server, stateStore: StateStore): vo
       searchIndexedDBTool,
       decodeStorageValueTool,
       diffStorageTool,
+      setStorageTool,
+      deleteStorageTool,
+      deleteIndexedDBTool,
+      requestSnapshotTool,
+      clearServerStateTool,
+      navigateTabTool,
     ],
   }));
 
@@ -222,6 +234,18 @@ export function registerStorageTools(server: Server, stateStore: StateStore): vo
         return { content: [{ type: "text", text: handleDecodeStorageValue(stateStore, args as Record<string, unknown>) }] };
       case "diff_storage":
         return { content: [{ type: "text", text: handleDiffStorage(stateStore, args as Record<string, unknown>) }] };
+      case "set_storage":
+        return { content: [{ type: "text", text: handleSetStorage(stateStore, args as Record<string, unknown>) }] };
+      case "delete_storage":
+        return { content: [{ type: "text", text: handleDeleteStorage(stateStore, args as Record<string, unknown>) }] };
+      case "delete_indexeddb":
+        return { content: [{ type: "text", text: handleDeleteIndexedDB(stateStore, args as Record<string, unknown>) }] };
+      case "request_snapshot":
+        return { content: [{ type: "text", text: handleRequestSnapshot(stateStore, args as Record<string, unknown>) }] };
+      case "clear_server_state":
+        return { content: [{ type: "text", text: handleClearServerState(stateStore, args as Record<string, unknown>) }] };
+      case "navigate_tab":
+        return { content: [{ type: "text", text: handleNavigateTab(stateStore, args as Record<string, unknown>) }] };
 
       default:
         return {
