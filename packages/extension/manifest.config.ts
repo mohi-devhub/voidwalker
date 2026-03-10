@@ -6,7 +6,7 @@ export default defineManifest({
   version: "0.1.0",
   description: "Zero-state local MCP for browser storage",
 
-  permissions: ["storage", "tabs", "alarms"],
+  permissions: ["storage", "tabs", "alarms", "cookies"],
   host_permissions: ["<all_urls>"],
 
   background: {

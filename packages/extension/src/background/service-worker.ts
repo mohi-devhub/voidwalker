@@ -2,6 +2,7 @@
 // tab lifecycle tracking, and message relay from content scripts.
 import { ALARM_NAME, ALARM_PERIOD_MINUTES } from "../shared/constants";
 import { startBridge, sendMessage, ping } from "./ws-bridge";
+import { startCookieMonitor } from "./cookie-monitor";
 
 let msgSeq = 0;
 function nextSeq(): number {
@@ -10,6 +11,7 @@ function nextSeq(): number {
 
 // Connect to MCP server on startup
 startBridge();
+startCookieMonitor();
 
 // ─── Alarm-based keepalive ────────────────────────────────────────────────────
 // Chrome terminates MV3 service workers after 30s of inactivity.
