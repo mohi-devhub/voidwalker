@@ -4,6 +4,13 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { StateStore } from "../state-store.js";
+import {
+  EVENTS_URI_RE,
+  ORIGIN_EVENTS_URI_RE,
+  readTabEvents,
+  readOriginEvents,
+  mutationResourceEntries,
+} from "./mutations.js";
 
 // URI patterns
 const LS_URI_RE = /^browser:\/\/tabs\/(\d+)\/origins\/([^/]+)\/localstorage$/;
@@ -43,6 +50,7 @@ export function registerStorageResources(server: Server, stateStore: StateStore)
             description: `Cookies for origin ${os.origin} in tab ${tab.tabId}`,
             mimeType: "application/json",
           },
+          ...mutationResourceEntries(tab.tabId, os.origin),
         );
       }
     }
@@ -176,6 +184,25 @@ export function registerStorageResources(server: Server, stateStore: StateStore)
             ),
           },
         ],
+      };
+    }
+
+    // browser://tabs/{tabId}/events
+    let em = EVENTS_URI_RE.exec(uri);
+    if (em) {
+      const tabId = parseInt(em[1]!, 10);
+      return {
+        contents: [{ uri, mimeType: "application/json", text: readTabEvents(stateStore, tabId, uri) }],
+      };
+    }
+
+    // browser://tabs/{tabId}/origins/{origin}/events
+    em = ORIGIN_EVENTS_URI_RE.exec(uri);
+    if (em) {
+      const tabId = parseInt(em[1]!, 10);
+      const origin = decodeURIComponent(em[2]!);
+      return {
+        contents: [{ uri, mimeType: "application/json", text: readOriginEvents(stateStore, tabId, origin, uri) }],
       };
     }
 
