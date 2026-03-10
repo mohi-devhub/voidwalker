@@ -3,6 +3,74 @@
 // sends initial storage snapshots on injection, and observes DOM mutations.
 import { MESSAGE_PREFIX } from "../shared/constants";
 
+// ─── Incoming write commands from service worker ──────────────────────────────
+// The background relays cmd_* and request_snapshot messages here via chrome.tabs.sendMessage.
+chrome.runtime.onMessage.addListener((message: Record<string, unknown>) => {
+  const type = message["type"] as string | undefined;
+
+  if (type === "cmd_set_storage") {
+    const { storageType, key, value } = message as {
+      storageType: "localStorage" | "sessionStorage";
+      key: string;
+      value: string;
+    };
+    const store = storageType === "localStorage" ? localStorage : sessionStorage;
+    store.setItem(key, value);
+  } else if (type === "cmd_delete_storage") {
+    const { storageType, key } = message as {
+      storageType: "localStorage" | "sessionStorage";
+      key: string;
+    };
+    const store = storageType === "localStorage" ? localStorage : sessionStorage;
+    store.removeItem(key);
+  } else if (type === "cmd_delete_indexeddb") {
+    const { dbName, storeName, key } = message as {
+      dbName: string;
+      storeName: string;
+      key: string;
+    };
+    const parsedKey = JSON.parse(key) as IDBValidKey;
+    const req = indexedDB.open(dbName);
+    req.onsuccess = () => {
+      const db = req.result;
+      const tx = db.transaction(storeName, "readwrite");
+      tx.objectStore(storeName).delete(parsedKey);
+      tx.oncomplete = () => db.close();
+    };
+  } else if (type === "request_snapshot") {
+    const target = (message["target"] as string) ?? "all";
+    const snap = (t: string) => {
+      if (t === "localstorage" || t === "all") {
+        const entries: Record<string, string> = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i)!;
+          entries[k] = localStorage.getItem(k)!;
+        }
+        chrome.runtime.sendMessage({
+          type: "snapshot_localstorage",
+          meta: { origin: location.origin, url: location.href, pageClock: Date.now() },
+          entries,
+        }).catch(() => {});
+      }
+      if (t === "sessionstorage" || t === "all") {
+        const entries: Record<string, string> = {};
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i)!;
+          entries[k] = sessionStorage.getItem(k)!;
+        }
+        chrome.runtime.sendMessage({
+          type: "snapshot_sessionstorage",
+          meta: { origin: location.origin, url: location.href, pageClock: Date.now() },
+          entries,
+        }).catch(() => {});
+      }
+    };
+    snap(target);
+  }
+
+  return false;
+});
+
 // ─── Relay MAIN → background ──────────────────────────────────────────────────
 window.addEventListener("message", (event: MessageEvent<Record<string, unknown>>) => {
   if (!event.data?.[MESSAGE_PREFIX]) return;

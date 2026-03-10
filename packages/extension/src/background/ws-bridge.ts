@@ -78,6 +78,20 @@ async function connect(): Promise<void> {
     } else if (msg["type"] === "auth_error") {
       console.error("[voidwalker] Auth rejected:", msg["reason"]);
       ws?.close();
+    } else if (typeof msg["type"] === "string" && msg["type"].startsWith("cmd_")) {
+      // Write commands: relay to the target tab's content script
+      const tabId = msg["tabId"] as number | undefined;
+      if (tabId != null) {
+        chrome.tabs.sendMessage(tabId, msg).catch(() => {
+          console.warn("[voidwalker] Could not relay command to tab", tabId);
+        });
+      }
+    } else if (msg["type"] === "request_snapshot") {
+      // Relay snapshot request to the target tab's content script
+      const tabId = msg["tabId"] as number | undefined;
+      if (tabId != null) {
+        chrome.tabs.sendMessage(tabId, msg).catch(() => {});
+      }
     }
   };
 

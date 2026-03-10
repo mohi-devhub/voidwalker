@@ -39,6 +39,19 @@ chrome.runtime.onMessage.addListener(
   },
 );
 
+// ─── Incoming write commands from MCP server ──────────────────────────────────
+// cmd_navigate_tab is handled here; storage write commands are relayed to content scripts.
+chrome.runtime.onMessage.addListener(
+  (message: Record<string, unknown>) => {
+    if (message["type"] === "cmd_navigate_tab") {
+      const tabId = message["tabId"] as number;
+      const url = message["url"] as string;
+      chrome.tabs.update(tabId, { url }).catch(() => {});
+    }
+    return false;
+  },
+);
+
 // ─── Tab lifecycle ────────────────────────────────────────────────────────────
 chrome.tabs.onRemoved.addListener((tabId) => {
   sendMessage({ type: "tab_closed", tabId, seq: nextSeq(), ts: Date.now() });
