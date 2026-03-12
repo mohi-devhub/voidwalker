@@ -20,8 +20,10 @@ export const firefoxManifest = {
     default_title: "Voidwalker",
   },
 
+  // Use a background page so the script can be loaded as an ES module (MV2 + Firefox 89+).
+  // background.scripts does not support type:module; background.page does via a <script> tag.
   background: {
-    scripts: ["background/event-page.js"],
+    page: "background/event-page.html",
     persistent: false,
   },
 
