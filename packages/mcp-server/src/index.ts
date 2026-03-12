@@ -4,7 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { DEFAULT_PORT, RETENTION_MS } from "@voidwalker/shared";
 import { StateStore } from "./state-store.js";
 import { attachWebSocketServer } from "./websocket.js";
-import { createMcpServer } from "./server.js";
+import { createMcpServer, attachStateListeners } from "./server.js";
 import { loadOrCreateToken } from "./utils/token.js";
 
 const port = parseInt(process.env["VOIDWALKER_PORT"] ?? String(DEFAULT_PORT), 10);
@@ -27,8 +27,12 @@ async function main(): Promise<void> {
       res.setHeader("Access-Control-Allow-Origin", "*");
       const transport = new SSEServerTransport("/message", res);
       sseTransports.set(transport.sessionId, transport);
-      res.on("close", () => sseTransports.delete(transport.sessionId));
       const srv = createMcpServer(stateStore);
+      const cleanup = attachStateListeners(srv, stateStore);
+      res.on("close", () => {
+        cleanup();
+        sseTransports.delete(transport.sessionId);
+      });
       await srv.connect(transport);
       return;
     }
@@ -61,6 +65,7 @@ async function main(): Promise<void> {
 
   // Stdio transport for Claude Desktop / Claude Code
   const stdioSrv = createMcpServer(stateStore);
+  attachStateListeners(stdioSrv, stateStore);
   const stdioTransport = new StdioServerTransport();
   await stdioSrv.connect(stdioTransport);
 }
