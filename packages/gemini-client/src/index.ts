@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import readline from "node:readline";
 import { McpBridge } from "./mcp-bridge.js";
+import { seedContext } from "./resources.js";
 
 // ─── ANSI helpers ─────────────────────────────────────────────────────────────
 const B = "\x1b[1m";       // bold
@@ -62,6 +63,17 @@ async function main(): Promise<void> {
 
   console.log(`\n${bold("Voidwalker")} — browser storage inspector`);
   info('Type "help" for available commands.\n');
+
+  // Seed initial context
+  await seedContext(bridge, (s) => console.log(s));
+
+  // Print resource update notifications inline (without clobbering the prompt)
+  bridge.onResourceUpdated((uri) => {
+    process.stdout.write(`\r${dim(`[updated] ${uri}`)}\n> `);
+  });
+  bridge.onResourceListChanged(() => {
+    process.stdout.write(`\r${dim("[tabs changed]")}\n> `);
+  });
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 

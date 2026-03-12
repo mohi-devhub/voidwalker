@@ -1,5 +1,9 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import {
+  ResourceUpdatedNotificationSchema,
+  ResourceListChangedNotificationSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import { DEFAULT_PORT } from "@voidwalker/shared";
 
 const DEFAULT_SERVER_URL = `http://127.0.0.1:${process.env["VOIDWALKER_PORT"] ?? DEFAULT_PORT}/sse`;
@@ -45,6 +49,18 @@ export class McpBridge {
       try { return JSON.parse(content.text); } catch { return content.text; }
     }
     return null;
+  }
+
+  onResourceUpdated(handler: (uri: string) => void): void {
+    this.client.setNotificationHandler(ResourceUpdatedNotificationSchema, (n) => {
+      handler(n.params.uri);
+    });
+  }
+
+  onResourceListChanged(handler: () => void): void {
+    this.client.setNotificationHandler(ResourceListChangedNotificationSchema, () => {
+      handler();
+    });
   }
 
   async close(): Promise<void> {
