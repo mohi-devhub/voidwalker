@@ -9,6 +9,11 @@ export default defineManifest({
   permissions: ["storage", "tabs", "alarms", "cookies"],
   host_permissions: ["<all_urls>"],
 
+  action: {
+    default_popup: "src/popup/popup.html",
+    default_title: "Voidwalker",
+  },
+
   background: {
     service_worker: "src/background/service-worker.ts",
     type: "module",

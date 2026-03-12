@@ -1,13 +1,21 @@
 // MV3 service worker — coordinates the WebSocket bridge, alarm-based keepalive,
 // tab lifecycle tracking, and message relay from content scripts.
 import { ALARM_NAME, ALARM_PERIOD_MINUTES } from "../shared/constants";
-import { startBridge, sendMessage, ping } from "./ws-bridge";
+import { startBridge, sendMessage, ping, isConnected } from "./ws-bridge";
 import { startCookieMonitor } from "./cookie-monitor";
 
 let msgSeq = 0;
 function nextSeq(): number {
   return msgSeq++;
 }
+
+// ─── Event throughput tracking ────────────────────────────────────────────────
+let eventCountWindow = 0; // events in the current 1-second window
+let eventsPerSec = 0;
+setInterval(() => {
+  eventsPerSec = eventCountWindow;
+  eventCountWindow = 0;
+}, 1_000);
 
 // Connect to MCP server on startup
 startBridge();
@@ -29,11 +37,26 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // Content scripts cannot self-identify their tab; we read it from sender.tab.id
 // and attach it to message.meta before forwarding over WebSocket.
 chrome.runtime.onMessage.addListener(
-  (message: Record<string, unknown>, sender) => {
+  (message: Record<string, unknown>, sender, sendResponse) => {
+    // Popup status query
+    if (message["type"] === "get_status") {
+      const tabCount = 0; // tabs are tracked server-side; return 0 as a safe default
+      sendResponse({ connected: isConnected(), eventsPerSec, tabCount });
+      return false;
+    }
+
+    // Reconnect request from popup (e.g. after token update)
+    if (message["type"] === "reconnect") {
+      startBridge();
+      sendResponse({});
+      return false;
+    }
+
     if (sender.tab?.id != null) {
       const meta = message["meta"] as Record<string, unknown> | undefined;
       if (meta != null) meta["tabId"] = sender.tab.id;
     }
+    eventCountWindow++;
     sendMessage({ ...message, seq: nextSeq(), ts: Date.now() });
     return false; // synchronous — no async response needed
   },
