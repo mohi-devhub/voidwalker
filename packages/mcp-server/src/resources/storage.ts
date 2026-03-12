@@ -7,8 +7,11 @@ import type { StateStore } from "../state-store.js";
 import {
   EVENTS_URI_RE,
   ORIGIN_EVENTS_URI_RE,
+  GLOBAL_EVENTS_URI,
+  GLOBAL_EVENTS_URI_RE,
   readTabEvents,
   readOriginEvents,
+  readGlobalEvents,
   mutationResourceEntries,
 } from "./mutations.js";
 
@@ -60,6 +63,12 @@ export function registerStorageResources(server: Server, stateStore: StateStore)
           uri: "browser://tabs",
           name: "Browser Tabs",
           description: "All active browser tabs with metadata",
+          mimeType: "application/json",
+        },
+        {
+          uri: GLOBAL_EVENTS_URI,
+          name: "Global DOM Events",
+          description: "All DOM mutation events across all tabs and origins",
           mimeType: "application/json",
         },
         ...dynamic,
@@ -184,6 +193,13 @@ export function registerStorageResources(server: Server, stateStore: StateStore)
             ),
           },
         ],
+      };
+    }
+
+    // browser://events/global
+    if (GLOBAL_EVENTS_URI_RE.test(uri)) {
+      return {
+        contents: [{ uri, mimeType: "application/json", text: readGlobalEvents(stateStore) }],
       };
     }
 

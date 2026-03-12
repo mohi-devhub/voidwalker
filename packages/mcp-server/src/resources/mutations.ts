@@ -3,6 +3,9 @@
 // one ReadResource handler per server instance.
 import type { StateStore } from "../state-store.js";
 
+export const GLOBAL_EVENTS_URI = "browser://events/global";
+export const GLOBAL_EVENTS_URI_RE = /^browser:\/\/events\/global$/;
+
 export const EVENTS_URI_RE = /^browser:\/\/tabs\/(\d+)\/events$/;
 export const ORIGIN_EVENTS_URI_RE = /^browser:\/\/tabs\/(\d+)\/origins\/([^/]+)\/events$/;
 
@@ -29,6 +32,19 @@ export function readOriginEvents(
   const os = stateStore.getOriginState(tabId, origin);
   const events = os ? os.mutations.toArray() : [];
   return JSON.stringify({ tabId, origin, events, eventCount: events.length }, null, 2);
+}
+
+export function readGlobalEvents(stateStore: StateStore): string {
+  const events: Array<{ tabId: number; origin: string; ts: string; url: string; mutations: unknown[] }> = [];
+  for (const tab of stateStore.getAllTabs()) {
+    for (const [origin, os] of tab.byOrigin) {
+      for (const m of os.mutations.toArray()) {
+        events.push({ tabId: tab.tabId, origin, ...m });
+      }
+    }
+  }
+  events.sort((a, b) => a.ts.localeCompare(b.ts));
+  return JSON.stringify({ events, total: events.length }, null, 2);
 }
 
 /** Returns event resource descriptors for a given tab+origin, for use in ListResources. */

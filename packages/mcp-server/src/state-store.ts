@@ -291,4 +291,18 @@ export class StateStore extends EventEmitter {
     this.tabs.clear();
     this.emit("all_cleared");
   }
+
+  /** Remove tabs whose lastActivity is older than retentionMs. Returns removed tabIds. */
+  collectStale(retentionMs: number): number[] {
+    const cutoff = Date.now() - retentionMs;
+    const removed: number[] = [];
+    for (const [tabId, tab] of this.tabs) {
+      if (new Date(tab.lastActivity).getTime() < cutoff) {
+        this.tabs.delete(tabId);
+        removed.push(tabId);
+        this.emit("tab_removed", tabId);
+      }
+    }
+    return removed;
+  }
 }

@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { DEFAULT_PORT } from "@voidwalker/shared";
+import { DEFAULT_PORT, RETENTION_MS } from "@voidwalker/shared";
 import { StateStore } from "./state-store.js";
 import { attachWebSocketServer } from "./websocket.js";
 import { createMcpServer } from "./server.js";
@@ -12,6 +12,9 @@ const port = parseInt(process.env["VOIDWALKER_PORT"] ?? String(DEFAULT_PORT), 10
 async function main(): Promise<void> {
   const token = loadOrCreateToken();
   const stateStore = new StateStore();
+
+  // GC stale tabs every 60 seconds (tabs inactive > RETENTION_MS are removed)
+  setInterval(() => stateStore.collectStale(RETENTION_MS), 60_000).unref();
 
   // Track SSE transports for POST message routing (one entry per connected MCP client)
   const sseTransports = new Map<string, SSEServerTransport>();
