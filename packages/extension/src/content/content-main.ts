@@ -2,6 +2,17 @@
 // Relays window.postMessage events from page-script.ts (MAIN world) to the service worker,
 // sends initial storage snapshots on injection, and observes DOM mutations.
 import { MESSAGE_PREFIX } from "../shared/constants";
+import { isFirefox } from "../shared/platform";
+
+// ─── Firefox: inject page-script into MAIN world ──────────────────────────────
+// Chrome uses world: "MAIN" in manifest.json, which Firefox MV2 doesn't support.
+// We inject page-script.js as a <script> element so it runs in the page's JS context.
+if (isFirefox) {
+  const script = document.createElement("script");
+  script.src = chrome.runtime.getURL("content/page-script.js");
+  (document.head ?? document.documentElement).prepend(script);
+  script.addEventListener("load", () => script.remove(), { once: true });
+}
 
 // ─── Incoming write commands from service worker ──────────────────────────────
 // The background relays cmd_* and request_snapshot messages here via chrome.tabs.sendMessage.
