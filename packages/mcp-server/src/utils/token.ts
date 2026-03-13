@@ -1,7 +1,9 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
+import { homedir } from "node:os";
 import { randomBytes } from "node:crypto";
-import { TOKEN_PATH } from "@voidwalker/shared";
+
+const TOKEN_PATH = join(homedir(), ".voidwalker", "token");
 
 export function loadOrCreateToken(path = TOKEN_PATH): string {
   if (existsSync(path)) {
