@@ -5,8 +5,14 @@ import {
   ResourceListChangedNotificationSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { DEFAULT_PORT } from "@voidwalker/shared";
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
 
-const DEFAULT_SERVER_URL = `http://127.0.0.1:${process.env["VOIDWALKER_PORT"] ?? DEFAULT_PORT}/sse`;
+const TOKEN_PATH = join(homedir(), ".voidwalker", "token");
+const token = existsSync(TOKEN_PATH) ? readFileSync(TOKEN_PATH, "utf8").trim() : "";
+
+const DEFAULT_SERVER_URL = `http://127.0.0.1:${process.env["VOIDWALKER_PORT"] ?? DEFAULT_PORT}/sse?token=${encodeURIComponent(token)}`;
 
 export interface ResourceMeta {
   uri: string;

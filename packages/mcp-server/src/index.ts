@@ -24,7 +24,12 @@ async function main(): Promise<void> {
 
     // MCP SSE transport — Gemini CLI and other SSE-based MCP clients connect here
     if (req.method === "GET" && url.pathname === "/sse") {
-      res.setHeader("Access-Control-Allow-Origin", "*");
+      if (url.searchParams.get("token") !== token) {
+        res.writeHead(401);
+        res.end("Unauthorized");
+        return;
+      }
+      res.setHeader("Access-Control-Allow-Origin", "null"); // restrict to non-browser or same-origin only
       const transport = new SSEServerTransport("/message", res);
       sseTransports.set(transport.sessionId, transport);
       const srv = createMcpServer(stateStore);
