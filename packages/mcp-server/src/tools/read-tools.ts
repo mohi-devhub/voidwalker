@@ -1,4 +1,4 @@
-// Pure read-only analysis tools: search, diff, decode.
+// Pure read-only analysis tools: search, diff, decode, history.
 // These operate entirely on in-memory state and require no extension round-trip.
 import type { StateStore } from "../state-store.js";
 
@@ -60,6 +60,27 @@ export const decodeStorageValueTool = {
       key: { type: "string", description: "Storage key whose value to decode" },
     },
     required: ["tabId", "origin", "storageType", "key"],
+  },
+};
+
+export const getStorageHistoryTool = {
+  name: "get_storage_history",
+  description:
+    "Return the mutation history for a tab and origin. Shows every set, remove, and clear across localStorage, sessionStorage, IndexedDB, and cookies — in chronological order. Useful for answering 'what changed?' and 'who wrote this key?'.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      tabId: { type: "number", description: "Browser tab ID" },
+      origin: { type: "string", description: "Origin, e.g. https://example.com" },
+      storageType: {
+        type: "string",
+        enum: ["localStorage", "sessionStorage", "indexedDB", "cookies"],
+        description: "Filter to a specific storage type (omit for all)",
+      },
+      key: { type: "string", description: "Filter to a specific key name (case-sensitive)" },
+      limit: { type: "number", description: "Max entries to return, newest first (default 100)" },
+    },
+    required: ["tabId", "origin"],
   },
 };
 
@@ -200,6 +221,33 @@ export function handleDecodeStorageValue(stateStore: StateStore, args: Record<st
   }
 
   return JSON.stringify({ tabId, origin, storageType, key, interpretations }, null, 2);
+}
+
+export function handleGetStorageHistory(stateStore: StateStore, args: Record<string, unknown>): string {
+  const { tabId, origin, storageType, key, limit = 100 } = args as {
+    tabId: number;
+    origin: string;
+    storageType?: "localStorage" | "sessionStorage" | "indexedDB" | "cookies";
+    key?: string;
+    limit?: number;
+  };
+
+  const os = stateStore.getOriginState(tabId, origin);
+  if (!os) return JSON.stringify({ error: `No state for tab ${tabId} origin ${origin}` });
+
+  let entries = os.changelog.toArray();
+
+  if (storageType) entries = entries.filter((e) => e.storageType === storageType);
+  if (key) entries = entries.filter((e) => e.key === key);
+
+  // Return newest first, capped at limit
+  const sliced = entries.slice(-Math.min(entries.length, limit as number)).reverse();
+
+  return JSON.stringify(
+    { tabId, origin, totalEntries: entries.length, entries: sliced },
+    null,
+    2,
+  );
 }
 
 export function handleDiffStorage(stateStore: StateStore, args: Record<string, unknown>): string {

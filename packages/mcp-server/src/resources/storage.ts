@@ -4,6 +4,7 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { StateStore } from "../state-store.js";
+import { redactEntries, redactValue } from "../utils/redact.js";
 import {
   EVENTS_URI_RE,
   ORIGIN_EVENTS_URI_RE,
@@ -105,7 +106,7 @@ export function registerStorageResources(server: Server, stateStore: StateStore)
       const tabId = parseInt(m[1]!, 10);
       const origin = decodeURIComponent(m[2]!);
       const os = stateStore.getOriginState(tabId, origin);
-      const entries = os ? Object.fromEntries(os.localStorage.entries) : {};
+      const entries = redactEntries(os ? Object.fromEntries(os.localStorage.entries) : {});
       return {
         contents: [
           {
@@ -127,7 +128,7 @@ export function registerStorageResources(server: Server, stateStore: StateStore)
       const tabId = parseInt(m[1]!, 10);
       const origin = decodeURIComponent(m[2]!);
       const os = stateStore.getOriginState(tabId, origin);
-      const entries = os ? Object.fromEntries(os.sessionStorage.entries) : {};
+      const entries = redactEntries(os ? Object.fromEntries(os.sessionStorage.entries) : {});
       return {
         contents: [
           {
@@ -180,7 +181,10 @@ export function registerStorageResources(server: Server, stateStore: StateStore)
       const tabId = parseInt(m[1]!, 10);
       const origin = decodeURIComponent(m[2]!);
       const os = stateStore.getOriginState(tabId, origin);
-      const cookies = os ? Array.from(os.cookies.entries.values()) : [];
+      const cookies = (os ? Array.from(os.cookies.entries.values()) : []).map((c) => ({
+        ...c,
+        value: redactValue(c.name, c.value),
+      }));
       return {
         contents: [
           {
