@@ -13,11 +13,16 @@ export const firefoxManifest = {
     },
   },
 
+  icons: {
+    "128": "icons/icon.png",
+  },
+
   permissions: ["storage", "tabs", "alarms", "cookies", "<all_urls>"],
 
   browser_action: {
     default_popup: "popup/popup.html",
     default_title: "Voidwalker",
+    default_icon: { "128": "icons/icon.png" },
   },
 
   // Use a background page so the script can be loaded as an ES module (MV2 + Firefox 89+).

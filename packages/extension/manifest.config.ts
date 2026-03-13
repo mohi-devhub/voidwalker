@@ -6,12 +6,17 @@ export default defineManifest({
   version: "1.0.0",
   description: "Zero-state local MCP for browser storage",
 
+  icons: {
+    "128": "icons/icon.png",
+  },
+
   permissions: ["storage", "tabs", "alarms", "cookies"],
   host_permissions: ["<all_urls>"],
 
   action: {
     default_popup: "src/popup/popup.html",
     default_title: "Voidwalker",
+    default_icon: { "128": "icons/icon.png" },
   },
 
   background: {

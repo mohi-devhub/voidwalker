@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — Voidwalker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      color: #1a1a1a;
+      background: #fff;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    header img { width: 48px; height: 48px; object-fit: contain; }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    header p {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    h2 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-top: 36px;
+      margin-bottom: 10px;
+      color: #111;
+    }
+
+    p { margin-bottom: 12px; color: #374151; }
+
+    ul {
+      margin: 8px 0 14px 20px;
+      color: #374151;
+    }
+
+    ul li { margin-bottom: 6px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px;
+      font-size: 14px;
+    }
+
+    th {
+      text-align: left;
+      padding: 8px 12px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      font-weight: 600;
+      color: #111;
+    }
+
+    td {
+      padding: 8px 12px;
+      border: 1px solid #e5e7eb;
+      color: #374151;
+      vertical-align: top;
+    }
+
+    code {
+      font-family: "SF Mono", Menlo, Monaco, "Cascadia Code", monospace;
+      font-size: 13px;
+      background: #f3f4f6;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .notice {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 20px 0;
+      font-size: 15px;
+      color: #1e40af;
+    }
+
+    footer {
+      margin-top: 56px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="../../assets/logo.png" alt="Voidwalker logo" />
+    <div>
+      <h1>Voidwalker — Privacy Policy</h1>
+      <p>Last updated: March 2026</p>
+    </div>
+  </header>
+
+  <div class="notice">
+    <strong>Short version:</strong> All data stays on your machine. Nothing is ever sent to external servers, third parties, or the internet.
+  </div>
+
+  <h2>What Voidwalker is</h2>
+  <p>
+    Voidwalker is a browser extension that connects to a local MCP server running on your own machine.
+    It gives AI coding assistants (Claude, Cursor, etc.) read and write access to your browser's
+    storage state for debugging purposes. The entire system runs locally — no cloud, no telemetry,
+    no external services.
+  </p>
+
+  <h2>What data is captured</h2>
+  <p>When the extension is active and connected to your local MCP server, it captures:</p>
+  <ul>
+    <li><strong>localStorage and sessionStorage</strong> — all keys and values on every page you visit</li>
+    <li><strong>IndexedDB</strong> — database names, object store names, record keys and values</li>
+    <li><strong>Cookies</strong> — name, value, domain, path, and attributes (secure, httpOnly, sameSite, expiry)</li>
+    <li><strong>DOM mutations</strong> — structural changes to the page (added/removed nodes, attribute changes, CSS selectors of affected elements)</li>
+    <li><strong>Tab metadata</strong> — tab ID, URL, title, and navigation events (open, close, navigate)</li>
+  </ul>
+
+  <h2>Where data goes</h2>
+  <p>
+    All captured data is sent exclusively over a WebSocket connection to a local MCP server running
+    at <code>ws://127.0.0.1:3695</code> on your own machine. This address is only reachable from
+    your own computer — it is not accessible from any other device or network.
+  </p>
+  <p>
+    The connection requires a secret authentication token stored in <code>~/.voidwalker/token</code>
+    that only you control. No data ever leaves your machine to external servers, third-party services,
+    or the internet.
+  </p>
+
+  <h2>Data retention</h2>
+  <p>
+    Data is held in memory only for the duration the MCP server is running. It is never written to
+    disk by the server, with the exception of an optional activity log at
+    <code>~/.voidwalker/activity.log</code> that records which MCP tools were called (not the full
+    data values). You can delete this file at any time. Stopping the server clears all in-memory state.
+  </p>
+
+  <h2>Sensitive data redaction</h2>
+  <p>
+    Values whose key names match sensitive patterns such as <code>token</code>, <code>auth</code>,
+    <code>session</code>, <code>jwt</code>, <code>password</code>, <code>secret</code>, or
+    <code>apikey</code> are automatically replaced with <code>[REDACTED]</code> in all read outputs.
+    The raw value is never forwarded unless you explicitly request it via the
+    <code>decode_storage_value</code> tool.
+  </p>
+
+  <h2>Permissions used</h2>
+  <table>
+    <thead>
+      <tr><th>Permission</th><th>Why it is needed</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>tabs</code></td>
+        <td>Read tab IDs and URLs to route storage events to the correct tab</td>
+      </tr>
+      <tr>
+        <td><code>storage</code></td>
+        <td>Persist your auth token between browser sessions</td>
+      </tr>
+      <tr>
+        <td><code>cookies</code></td>
+        <td>Monitor cookie changes via <code>chrome.cookies.onChanged</code></td>
+      </tr>
+      <tr>
+        <td><code>alarms</code></td>
+        <td>Keep the background service worker alive with a periodic heartbeat</td>
+      </tr>
+      <tr>
+        <td><code>&lt;all_urls&gt;</code></td>
+        <td>
+          Inject content scripts on every page to intercept storage API calls at
+          <code>document_start</code>, before any page scripts run. This is required to observe
+          storage mutations reliably across all sites.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Third parties</h2>
+  <p>
+    Voidwalker does not share data with any third party. The AI client you connect
+    (Claude, Cursor, etc.) receives data through the MCP protocol running locally — what that
+    client does with it is governed by its own privacy policy.
+  </p>
+
+  <h2>Children's privacy</h2>
+  <p>
+    Voidwalker is a developer tool not intended for use by children under 13.
+    It does not knowingly collect data from children.
+  </p>
+
+  <h2>Changes to this policy</h2>
+  <p>
+    If this policy changes, the updated version will be published at this URL and committed to the
+    repository. The "Last updated" date at the top of this page will reflect the revision.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Questions or concerns? Open an issue at
+    <a href="https://github.com/mohi-devhub/voidwalker/issues" target="_blank" rel="noopener">
+      github.com/mohi-devhub/voidwalker
+    </a>.
+  </p>
+
+  <footer>
+    &copy; 2026 Voidwalker &mdash;
+    <a href="https://github.com/mohi-devhub/voidwalker">GitHub</a>
+  </footer>
+
+</body>
+</html>

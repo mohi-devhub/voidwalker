@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.png" width="120" alt="Voidwalker" />
+
 # Voidwalker
 
 **Let AI debug your browser state.**
