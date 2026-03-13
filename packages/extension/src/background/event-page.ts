@@ -66,6 +66,10 @@ chrome.runtime.onMessage.addListener((message: Record<string, unknown>) => {
 });
 
 // ─── Tab lifecycle ────────────────────────────────────────────────────────────
+chrome.tabs.onCreated.addListener((tab) => {
+  sendMessage({ type: "tab_opened", tabId: tab.id!, url: tab.url ?? tab.pendingUrl ?? "", title: tab.title ?? "", seq: nextSeq(), ts: Date.now() });
+});
+
 chrome.tabs.onRemoved.addListener((tabId) => {
   sendMessage({ type: "tab_closed", tabId, seq: nextSeq(), ts: Date.now() });
 });
