@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import type { ExtensionMessage, SerializableCookie, DomMutationRecord } from "@voidwalker/shared";
-import { MUTATION_RING_SIZE } from "@voidwalker/shared";
+import { MUTATION_RING_SIZE, CHANGELOG_RING_SIZE } from "@voidwalker/shared";
 
 // ── CircularBuffer ────────────────────────────────────────────────────────────
 // Fixed-capacity ring buffer. Oldest entries are overwritten when full.
@@ -51,6 +51,16 @@ export interface IDBDatabaseState {
   lastUpdated: string;
 }
 
+export interface ChangelogEntry {
+  ts: string;
+  type: "set" | "remove" | "clear" | "snapshot";
+  storageType: "localStorage" | "sessionStorage" | "indexedDB" | "cookies";
+  key?: string;
+  value?: string;
+  dbName?: string;
+  storeName?: string;
+}
+
 export interface OriginState {
   origin: string;
   localStorage: { entries: Map<string, string>; lastUpdated: string };
@@ -58,6 +68,7 @@ export interface OriginState {
   indexedDB: Map<string, IDBDatabaseState>; // dbName → db state
   cookies: { entries: Map<string, SerializableCookie>; lastUpdated: string };
   mutations: CircularBuffer<StoredMutation>;
+  changelog: CircularBuffer<ChangelogEntry>;
 }
 
 export interface TabState {
@@ -79,6 +90,7 @@ export class StateStore extends EventEmitter {
         const os = this.ensureOrigin(msg.meta.tabId, msg.meta.origin, msg.meta.url);
         os.localStorage.entries.set(msg.key, msg.value);
         os.localStorage.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: os.localStorage.lastUpdated, type: "set", storageType: "localStorage", key: msg.key, value: msg.value });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -86,6 +98,7 @@ export class StateStore extends EventEmitter {
         const os = this.ensureOrigin(msg.meta.tabId, msg.meta.origin, msg.meta.url);
         os.localStorage.entries.delete(msg.key);
         os.localStorage.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: os.localStorage.lastUpdated, type: "remove", storageType: "localStorage", key: msg.key });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -93,6 +106,7 @@ export class StateStore extends EventEmitter {
         const os = this.ensureOrigin(msg.meta.tabId, msg.meta.origin, msg.meta.url);
         os.localStorage.entries.clear();
         os.localStorage.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: os.localStorage.lastUpdated, type: "clear", storageType: "localStorage" });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -100,6 +114,7 @@ export class StateStore extends EventEmitter {
         const os = this.ensureOrigin(msg.meta.tabId, msg.meta.origin, msg.meta.url);
         os.localStorage.entries = new Map(Object.entries(msg.entries));
         os.localStorage.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: os.localStorage.lastUpdated, type: "snapshot", storageType: "localStorage" });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -109,6 +124,7 @@ export class StateStore extends EventEmitter {
         const os = this.ensureOrigin(msg.meta.tabId, msg.meta.origin, msg.meta.url);
         os.sessionStorage.entries.set(msg.key, msg.value);
         os.sessionStorage.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: os.sessionStorage.lastUpdated, type: "set", storageType: "sessionStorage", key: msg.key, value: msg.value });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -116,6 +132,7 @@ export class StateStore extends EventEmitter {
         const os = this.ensureOrigin(msg.meta.tabId, msg.meta.origin, msg.meta.url);
         os.sessionStorage.entries.delete(msg.key);
         os.sessionStorage.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: os.sessionStorage.lastUpdated, type: "remove", storageType: "sessionStorage", key: msg.key });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -123,6 +140,7 @@ export class StateStore extends EventEmitter {
         const os = this.ensureOrigin(msg.meta.tabId, msg.meta.origin, msg.meta.url);
         os.sessionStorage.entries.clear();
         os.sessionStorage.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: os.sessionStorage.lastUpdated, type: "clear", storageType: "sessionStorage" });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -130,6 +148,7 @@ export class StateStore extends EventEmitter {
         const os = this.ensureOrigin(msg.meta.tabId, msg.meta.origin, msg.meta.url);
         os.sessionStorage.entries = new Map(Object.entries(msg.entries));
         os.sessionStorage.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: os.sessionStorage.lastUpdated, type: "snapshot", storageType: "sessionStorage" });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -140,6 +159,7 @@ export class StateStore extends EventEmitter {
         const store = this.ensureIDBStore(os, msg.dbName, msg.storeName);
         store.records.set(msg.key, msg.value);
         store.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: store.lastUpdated, type: "set", storageType: "indexedDB", key: msg.key, value: msg.value, dbName: msg.dbName, storeName: msg.storeName });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -148,6 +168,7 @@ export class StateStore extends EventEmitter {
         const store = this.ensureIDBStore(os, msg.dbName, msg.storeName);
         store.records.delete(msg.key);
         store.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: store.lastUpdated, type: "remove", storageType: "indexedDB", key: msg.key, dbName: msg.dbName, storeName: msg.storeName });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -156,6 +177,7 @@ export class StateStore extends EventEmitter {
         const store = this.ensureIDBStore(os, msg.dbName, msg.storeName);
         store.records.clear();
         store.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: store.lastUpdated, type: "clear", storageType: "indexedDB", dbName: msg.dbName, storeName: msg.storeName });
         this.emit("origin_updated", msg.meta.tabId, msg.meta.origin);
         break;
       }
@@ -192,6 +214,7 @@ export class StateStore extends EventEmitter {
         const os = this.ensureOrigin(tabId, msg.meta.origin, msg.meta.url);
         os.cookies.entries.set(msg.cookie.name, msg.cookie);
         os.cookies.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: os.cookies.lastUpdated, type: "set", storageType: "cookies", key: msg.cookie.name, value: msg.cookie.value });
         this.emit("origin_updated", tabId, msg.meta.origin);
         break;
       }
@@ -200,6 +223,7 @@ export class StateStore extends EventEmitter {
         const os = this.ensureOrigin(tabId, msg.meta.origin, msg.meta.url);
         os.cookies.entries.delete(msg.cookie.name);
         os.cookies.lastUpdated = new Date().toISOString();
+        os.changelog.push({ ts: os.cookies.lastUpdated, type: "remove", storageType: "cookies", key: msg.cookie.name });
         this.emit("origin_updated", tabId, msg.meta.origin);
         break;
       }
@@ -264,6 +288,7 @@ export class StateStore extends EventEmitter {
         indexedDB: new Map(),
         cookies: { entries: new Map(), lastUpdated: now },
         mutations: new CircularBuffer<StoredMutation>(MUTATION_RING_SIZE),
+        changelog: new CircularBuffer<ChangelogEntry>(CHANGELOG_RING_SIZE),
       };
       tab.byOrigin.set(origin, os);
     }
