@@ -176,6 +176,14 @@ export function handleClearServerState(stateStore: StateStore, args: Record<stri
 
 export function handleNavigateTab(_stateStore: StateStore, args: Record<string, unknown>): string {
   const { tabId, url } = args as { tabId: number; url: string };
+  try {
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return JSON.stringify({ error: `URL scheme "${parsed.protocol}" is not allowed. Only http and https are permitted.` });
+    }
+  } catch {
+    return JSON.stringify({ error: `Invalid URL: ${url}` });
+  }
   const sent = sendCommand({ type: "cmd_navigate_tab", seq: nextSeq(), ts: Date.now(), tabId, url });
   if (!sent) return noExtension();
   return JSON.stringify({ ok: true, tabId, url });
