@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import type { Server as HttpServer } from "node:http";
 import type { StateStore } from "./state-store.js";
 import type { ExtensionMessage } from "@voidwalker/shared";
+import { MAX_PAYLOAD_BYTES } from "@voidwalker/shared";
 
 const SERVER_VERSION = "0.0.1";
 
@@ -26,7 +27,7 @@ export function attachWebSocketServer(
   stateStore: StateStore,
   token: string,
 ): WebSocketServer {
-  const wss = new WebSocketServer({ server: httpServer });
+  const wss = new WebSocketServer({ server: httpServer, maxPayload: MAX_PAYLOAD_BYTES });
   let serverSeq = 0;
 
   wss.on("connection", (ws) => {
