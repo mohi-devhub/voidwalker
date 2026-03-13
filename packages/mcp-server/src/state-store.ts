@@ -213,6 +213,11 @@ export class StateStore extends EventEmitter {
       }
 
       // ── Tab lifecycle ─────────────────────────────────────────────────────────
+      case "tab_opened": {
+        const tab = this.ensureTab(msg.tabId, msg.url);
+        tab.title = msg.title;
+        break;
+      }
       case "tab_closed":
         this.clearTab(msg.tabId);
         break;
