@@ -13,4 +13,3 @@ export const RETENTION_MS = 5 * 60 * 1_000;
 
 export const MAX_PAYLOAD_BYTES = 5 * 1024 * 1024;
 export const MESSAGE_PREFIX = "__voidwalker__";
-export const TOKEN_PATH = `${process.env["HOME"] ?? "~"}/.voidwalker/token`;
