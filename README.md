@@ -6,9 +6,12 @@
 
 [Issues](https://github.com/mohi-devhub/voidwalker/issues) · [Contributing](#contributing)
 
-![Version](https://img.shields.io/badge/version-0.1.0-informational) ![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen) ![MCP](https://img.shields.io/badge/MCP-compatible-blue) ![Chrome](https://img.shields.io/badge/Chrome-MV3-yellow) ![Firefox](https://img.shields.io/badge/Firefox-MV2-orange) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![Version](https://img.shields.io/badge/version-1.0.0-informational) ![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen) ![MCP](https://img.shields.io/badge/MCP-compatible-blue) ![Chrome](https://img.shields.io/badge/Chrome-MV3-yellow) ![Firefox](https://img.shields.io/badge/Firefox-MV2-orange) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 </div>
+
+> [!WARNING]
+> Voidwalker is under active development. You may run into bugs, rough edges, or breaking changes along the way.
 
 ---
 
