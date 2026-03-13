@@ -1,6 +1,7 @@
 // Pure read-only analysis tools: search, diff, decode, history.
 // These operate entirely on in-memory state and require no extension round-trip.
 import type { StateStore } from "../state-store.js";
+import { MAX_QUERY_LIMIT } from "@voidwalker/shared";
 
 // ── Tool definitions ──────────────────────────────────────────────────────────
 
@@ -156,6 +157,7 @@ export function handleSearchIndexedDB(stateStore: StateStore, args: Record<strin
   const db = os?.indexedDB.get(dbName);
   if (!db) return JSON.stringify({ error: `Database "${dbName}" not found for origin ${origin}` });
 
+  const effectiveLimit = Math.min(Math.max(1, limit as number), MAX_QUERY_LIMIT);
   const valLc = valuePattern.toLowerCase();
   const results: Array<{ storeName: string; key: string; value: string }> = [];
 
@@ -166,12 +168,12 @@ export function handleSearchIndexedDB(stateStore: StateStore, args: Record<strin
     for (const [k, v] of store.records) {
       if (!v.toLowerCase().includes(valLc)) continue;
       results.push({ storeName: sName, key: k, value: v });
-      if (results.length >= (limit as number)) break;
+      if (results.length >= effectiveLimit) break;
     }
-    if (results.length >= (limit as number)) break;
+    if (results.length >= effectiveLimit) break;
   }
 
-  const truncated = results.length >= (limit as number);
+  const truncated = results.length >= effectiveLimit;
   return JSON.stringify({ tabId, origin, dbName, results, resultCount: results.length, truncated }, null, 2);
 }
 
@@ -241,7 +243,8 @@ export function handleGetStorageHistory(stateStore: StateStore, args: Record<str
   if (key) entries = entries.filter((e) => e.key === key);
 
   // Return newest first, capped at limit
-  const sliced = entries.slice(-Math.min(entries.length, limit as number)).reverse();
+  const effectiveLimit = Math.min(Math.max(1, limit as number), MAX_QUERY_LIMIT);
+  const sliced = entries.slice(-Math.min(entries.length, effectiveLimit)).reverse();
 
   return JSON.stringify(
     { tabId, origin, totalEntries: entries.length, entries: sliced },
@@ -265,22 +268,27 @@ export function handleDiffStorage(stateStore: StateStore, args: Record<string, u
       )
     : {};
 
+  // Copy baseline through a null-prototype object to eliminate prototype pollution risk.
+  // Object.hasOwn is used instead of `in` so inherited properties (toString, constructor, etc.)
+  // are never treated as storage keys.
+  const safeBaseline: Record<string, string> = Object.assign(Object.create(null) as Record<string, string>, baseline);
+
   const added: Record<string, string> = {};
   const removed: Record<string, string> = {};
   const changed: Array<{ key: string; before: string; after: string }> = [];
   const unchanged: string[] = [];
 
   for (const key of Object.keys(current)) {
-    if (!(key in baseline)) {
+    if (!Object.hasOwn(safeBaseline, key)) {
       added[key] = current[key]!;
-    } else if (baseline[key] !== current[key]) {
-      changed.push({ key, before: baseline[key]!, after: current[key]! });
+    } else if (safeBaseline[key] !== current[key]) {
+      changed.push({ key, before: safeBaseline[key]!, after: current[key]! });
     } else {
       unchanged.push(key);
     }
   }
-  for (const key of Object.keys(baseline)) {
-    if (!(key in current)) removed[key] = baseline[key]!;
+  for (const key of Object.keys(safeBaseline)) {
+    if (!Object.hasOwn(current, key)) removed[key] = safeBaseline[key]!;
   }
 
   return JSON.stringify(
