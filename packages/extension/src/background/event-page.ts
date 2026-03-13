@@ -62,6 +62,20 @@ chrome.runtime.onMessage.addListener((message: Record<string, unknown>) => {
     const url = message["url"] as string;
     chrome.tabs.update(tabId, { url }).catch(() => {});
   }
+
+  if (message["type"] === "cmd_set_storage" || message["type"] === "cmd_delete_storage") {
+    const tabId = message["tabId"] as number;
+    const origin = message["origin"] as string;
+    chrome.tabs.get(tabId).then((tab) => {
+      try {
+        const tabOrigin = new URL(tab.url ?? "").origin;
+        if (tabOrigin !== origin) return;
+      } catch { return; }
+      chrome.tabs.sendMessage(tabId, message).catch(() => {});
+    }).catch(() => {});
+    return false;
+  }
+
   return false;
 });
 
