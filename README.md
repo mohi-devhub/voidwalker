@@ -10,9 +10,6 @@
 
 </div>
 
-> [!WARNING]
-> Voidwalker is under active development. You may run into bugs, rough edges, or breaking changes along the way.
-
 ---
 
 Voidwalker is a browser extension + local MCP server that gives AI agents real-time access to your browser's storage state — localStorage, sessionStorage, IndexedDB, cookies, DOM mutations, and mutation history. The AI can read, search, diff, decode, and write browser storage while you work. No DevTools required.
@@ -60,6 +57,9 @@ Ask your agent natural language questions — it picks the right tool automatica
 - **Write access** — the AI can set/delete localStorage, sessionStorage, and IndexedDB records, and navigate tabs. All writes are validated (origin checks, URL scheme enforcement).
 - **Chrome + Firefox** — MV3 service worker for Chrome, MV2 event page for Firefox.
 - **Zero external dependencies** — no cloud, no telemetry, no API keys beyond your AI client.
+
+> [!WARNING]
+> Voidwalker is under active development. You may run into bugs, rough edges, or breaking changes along the way.
 
 ---
 
