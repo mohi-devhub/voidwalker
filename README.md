@@ -90,14 +90,15 @@ Start the server manually, then connect via SSE at `http://127.0.0.1:3695/sse`.
 
 | Tool | Description |
 |------|-------------|
-| `read_storage` | Read localStorage or sessionStorage |
+| `read_storage` | Read localStorage or sessionStorage (sensitive keys redacted) |
 | `query_indexeddb` | Query an IndexedDB object store |
-| `get_cookie` | Get a specific cookie |
+| `get_cookie` | Get a specific cookie (sensitive names redacted) |
 | `search_cookies` | Search cookies by pattern |
 | `search_storage` | Search storage by key/value pattern |
 | `search_indexeddb` | Search IndexedDB records by value pattern |
-| `decode_storage_value` | Decode a value (JSON, base64, JWT) |
+| `decode_storage_value` | Decode a value (JSON, base64, JWT) — full value, no redaction |
 | `diff_storage` | Compare current storage against a baseline |
+| `get_storage_history` | Storage mutation history for an origin — "what changed and when?" |
 | `get_dom_mutations` | Get recent DOM mutations |
 | `set_storage` | Write a key to localStorage/sessionStorage |
 | `delete_storage` | Delete a key from localStorage/sessionStorage |
@@ -127,6 +128,22 @@ Build Firefox extension:
 ```bash
 npm run build:firefox --workspace=packages/extension
 ```
+
+## Security
+
+- All communication is local-only (`127.0.0.1`). Nothing is sent to external servers.
+- The MCP server and WebSocket both require a token from `~/.voidwalker/token`.
+- Storage values matching sensitive key patterns (`token`, `auth`, `session`, `jwt`, `password`, `secret`, etc.) are automatically redacted to `[REDACTED]` in all read outputs. Use `decode_storage_value` if you intentionally need the raw value.
+- Every tool call is appended to `~/.voidwalker/activity.log` so you can always see what the AI read or wrote.
+
+## Coming soon
+
+- **Domain allowlist** — restrict AI access to specific origins (e.g. `localhost` only); deny by default
+- **Storage key allowlist** — opt-in specific keys; never expose `authToken` unless explicitly allowed
+- **Write confirmation** — prompt before any storage write executes ("AI wants to set `featureFlag` → Allow?")
+- **Snapshot & restore** — `snapshot_browser_state()` / `restore_snapshot(id)` for one-command bug reproduction
+- **`analyze_page_state`** — AI explains why a page is broken based on cross-storage inconsistencies
+- **Panic button** — single-click extension toggle to instantly disconnect all AI access
 
 ## Architecture
 
