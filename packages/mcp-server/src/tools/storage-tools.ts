@@ -19,6 +19,7 @@ import {
 } from "./write-tools.js";
 import { logActivity } from "../utils/activity-log.js";
 import { redactEntries, redactValue } from "../utils/redact.js";
+import { MAX_QUERY_LIMIT } from "@voidwalker/shared";
 
 export function registerStorageTools(server: Server, stateStore: StateStore): void {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -173,8 +174,9 @@ export function registerStorageTools(server: Server, stateStore: StateStore): vo
         if (keyPrefix) {
           records = records.filter(({ key }) => key.startsWith(keyPrefix));
         }
-        const truncated = records.length > limit;
-        records = records.slice(0, limit);
+        const effectiveLimit = Math.min(Math.max(1, limit), MAX_QUERY_LIMIT);
+        const truncated = records.length > effectiveLimit;
+        records = records.slice(0, effectiveLimit);
         return {
           content: [
             {
