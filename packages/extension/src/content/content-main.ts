@@ -84,6 +84,7 @@ chrome.runtime.onMessage.addListener((message: Record<string, unknown>) => {
 
 // ─── Relay MAIN → background ──────────────────────────────────────────────────
 window.addEventListener("message", (event: MessageEvent<Record<string, unknown>>) => {
+  if (event.origin !== window.location.origin) return;
   if (!event.data?.[MESSAGE_PREFIX]) return;
 
   // Strip the internal marker before forwarding — it's not part of the wire protocol

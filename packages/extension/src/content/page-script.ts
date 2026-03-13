@@ -5,7 +5,7 @@
   const PREFIX = "__voidwalker";
 
   function post(data: Record<string, unknown>): void {
-    window.postMessage({ [PREFIX]: true, ...data }, "*");
+    window.postMessage({ [PREFIX]: true, ...data }, window.location.origin);
   }
 
   // Capture original methods before any other script can overwrite them
