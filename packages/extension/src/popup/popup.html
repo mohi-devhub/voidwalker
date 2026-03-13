@@ -16,12 +16,12 @@
     .divider { border: none; border-top: 1px solid #e5e7eb; margin-bottom: 12px; }
     label { font-size: 12px; font-weight: 500; display: block; margin-bottom: 4px; }
     .hint { font-size: 11px; color: #9ca3af; margin-bottom: 6px; }
-    input[type="text"] {
+    input[type="password"] {
       width: 100%; font-size: 12px; font-family: monospace;
       padding: 5px 7px; border: 1px solid #d1d5db; border-radius: 5px;
       outline: none; transition: border-color 0.15s;
     }
-    input[type="text"]:focus { border-color: #3b82f6; }
+    input[type="password"]:focus { border-color: #3b82f6; }
     .btn-row { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
     button {
       font-size: 12px; padding: 5px 12px; border: none;
@@ -45,7 +45,7 @@
 
   <label for="tokenInput">Auth Token</label>
   <p class="hint">Copy from <code>~/.voidwalker/token</code></p>
-  <input type="text" id="tokenInput" placeholder="paste token here" autocomplete="off" spellcheck="false" />
+  <input type="password" id="tokenInput" placeholder="paste token here" autocomplete="off" spellcheck="false" />
   <div class="btn-row">
     <button id="saveBtn">Save &amp; Reconnect</button>
     <span class="saved" id="savedMsg" style="display:none">Saved!</span>

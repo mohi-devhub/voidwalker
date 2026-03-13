@@ -3,7 +3,7 @@ import { defineManifest } from "@crxjs/vite-plugin";
 export default defineManifest({
   manifest_version: 3,
   name: "Voidwalker",
-  version: "0.1.0",
+  version: "1.0.0",
   description: "Zero-state local MCP for browser storage",
 
   permissions: ["storage", "tabs", "alarms", "cookies"],

@@ -3,7 +3,7 @@
 export const firefoxManifest = {
   manifest_version: 2,
   name: "Voidwalker",
-  version: "0.1.0",
+  version: "1.0.0",
   description: "Zero-state local MCP for browser storage",
 
   browser_specific_settings: {
