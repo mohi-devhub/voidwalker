@@ -8,7 +8,7 @@
 
 [Issues](https://github.com/mohi-devhub/voidwalker/issues) · [Contributing](#contributing)
 
-<video src="assets/voidwalker-demo.mp4" autoplay loop muted playsinline width="100%"></video>
+<img src="assets/voidwalker-demo.gif" alt="Voidwalker demo" width="100%" />
 
 ![Version](https://img.shields.io/badge/version-1.0.0-informational) ![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen) ![MCP](https://img.shields.io/badge/MCP-compatible-blue) ![Chrome](https://img.shields.io/badge/Chrome-pending_review-yellow) ![Firefox](https://img.shields.io/badge/Firefox-MV2-orange) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
