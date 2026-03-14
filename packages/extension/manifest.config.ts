@@ -10,7 +10,7 @@ export default defineManifest({
     "128": "icons/icon.png",
   },
 
-  permissions: ["storage", "tabs", "alarms", "cookies"],
+  permissions: ["storage", "tabs", "alarms", "cookies", "notifications"],
   host_permissions: ["<all_urls>"],
 
   action: {

@@ -30,6 +30,24 @@
     }
     button:hover { background: #2563eb; }
     .saved { font-size: 11px; color: #22c55e; }
+    .section-title { font-size: 12px; font-weight: 500; margin-bottom: 6px; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .toggle-label { font-size: 12px; color: #374151; }
+    .toggle { position: relative; display: inline-block; width: 32px; height: 18px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #d1d5db; border-radius: 18px; transition: 0.2s; }
+    .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s; }
+    input:checked + .slider { background: #3b82f6; }
+    input:checked + .slider:before { transform: translateX(14px); }
+    .origins-list { list-style: none; margin: 4px 0 6px; max-height: 80px; overflow-y: auto; }
+    .origins-list li { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-family: monospace; padding: 2px 0; color: #374151; }
+    .origins-list li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    .remove-btn { font-size: 10px; color: #ef4444; cursor: pointer; background: none; border: none; padding: 0 2px; flex-shrink: 0; }
+    .origin-input-row { display: flex; gap: 5px; }
+    .origin-input-row input { flex: 1; font-size: 11px; font-family: monospace; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; outline: none; }
+    .origin-input-row input:focus { border-color: #3b82f6; }
+    .add-btn { font-size: 11px; padding: 4px 8px; white-space: nowrap; }
+    .empty-hint { font-size: 11px; color: #9ca3af; font-style: italic; }
   </style>
 </head>
 <body>
@@ -49,6 +67,26 @@
   <div class="btn-row">
     <button id="saveBtn">Save &amp; Reconnect</button>
     <span class="saved" id="savedMsg" style="display:none">Saved!</span>
+  </div>
+
+  <hr class="divider" />
+
+  <div class="toggle-row">
+    <span class="toggle-label">Confirm writes</span>
+    <label class="toggle">
+      <input type="checkbox" id="confirmWritesToggle" />
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <hr class="divider" />
+
+  <p class="section-title">Allowed origins</p>
+  <p class="hint">Empty = allow all. Add origins to restrict access.</p>
+  <ul class="origins-list" id="originsList"></ul>
+  <div class="origin-input-row">
+    <input type="text" id="originInput" placeholder="https://example.com" spellcheck="false" />
+    <button class="add-btn" id="addOriginBtn">Add</button>
   </div>
 
   <script type="module" src="./popup.ts"></script>

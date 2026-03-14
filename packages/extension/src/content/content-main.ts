@@ -1,7 +1,7 @@
 // Runs in the ISOLATED world.
 // Relays window.postMessage events from page-script.ts (MAIN world) to the service worker,
 // sends initial storage snapshots on injection, and observes DOM mutations.
-import { MESSAGE_PREFIX } from "../shared/constants";
+import { MESSAGE_PREFIX, ALLOWED_ORIGINS_KEY } from "../shared/constants";
 import { isFirefox } from "../shared/platform";
 
 // ─── Firefox: inject page-script into MAIN world ──────────────────────────────
@@ -87,10 +87,15 @@ window.addEventListener("message", (event: MessageEvent<Record<string, unknown>>
   if (event.origin !== window.location.origin) return;
   if (!event.data?.[MESSAGE_PREFIX]) return;
 
-  // Strip the internal marker before forwarding — it's not part of the wire protocol
-  const { [MESSAGE_PREFIX]: _marker, ...msg } = event.data;
-  chrome.runtime.sendMessage(msg).catch(() => {
-    // Background service worker may not be ready on the very first injection
+  chrome.storage.local.get([ALLOWED_ORIGINS_KEY], (result) => {
+    const allowList = (result[ALLOWED_ORIGINS_KEY] as string[] | undefined) ?? [];
+    if (allowList.length > 0 && !allowList.includes(location.origin)) return;
+
+    // Strip the internal marker before forwarding — it's not part of the wire protocol
+    const { [MESSAGE_PREFIX]: _marker, ...msg } = event.data;
+    chrome.runtime.sendMessage(msg).catch(() => {
+      // Background service worker may not be ready on the very first injection
+    });
   });
 });
 
@@ -98,32 +103,38 @@ window.addEventListener("message", (event: MessageEvent<Record<string, unknown>>
 // Send current storage contents so the MCP server has state even for pages
 // that never call setItem after the extension connects.
 // tabId is intentionally absent — the service worker reads it from sender.tab.id.
+// Snapshots are suppressed for origins not in the allowlist (empty = allow all).
 
-const lsEntries: Record<string, string> = {};
-for (let i = 0; i < localStorage.length; i++) {
-  const k = localStorage.key(i)!;
-  lsEntries[k] = localStorage.getItem(k)!;
-}
-chrome.runtime
-  .sendMessage({
-    type: "snapshot_localstorage",
-    meta: { origin: location.origin, url: location.href, pageClock: Date.now() },
-    entries: lsEntries,
-  })
-  .catch(() => {});
+chrome.storage.local.get([ALLOWED_ORIGINS_KEY], (result) => {
+  const allowList = (result[ALLOWED_ORIGINS_KEY] as string[] | undefined) ?? [];
+  if (allowList.length > 0 && !allowList.includes(location.origin)) return;
 
-const ssEntries: Record<string, string> = {};
-for (let i = 0; i < sessionStorage.length; i++) {
-  const k = sessionStorage.key(i)!;
-  ssEntries[k] = sessionStorage.getItem(k)!;
-}
-chrome.runtime
-  .sendMessage({
-    type: "snapshot_sessionstorage",
-    meta: { origin: location.origin, url: location.href, pageClock: Date.now() },
-    entries: ssEntries,
-  })
-  .catch(() => {});
+  const lsEntries: Record<string, string> = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i)!;
+    lsEntries[k] = localStorage.getItem(k)!;
+  }
+  chrome.runtime
+    .sendMessage({
+      type: "snapshot_localstorage",
+      meta: { origin: location.origin, url: location.href, pageClock: Date.now() },
+      entries: lsEntries,
+    })
+    .catch(() => {});
+
+  const ssEntries: Record<string, string> = {};
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const k = sessionStorage.key(i)!;
+    ssEntries[k] = sessionStorage.getItem(k)!;
+  }
+  chrome.runtime
+    .sendMessage({
+      type: "snapshot_sessionstorage",
+      meta: { origin: location.origin, url: location.href, pageClock: Date.now() },
+      entries: ssEntries,
+    })
+    .catch(() => {});
+});
 
 // ─── DOM Mutation Observer ────────────────────────────────────────────────────
 // Batches MutationObserver records and forwards them to the service worker at

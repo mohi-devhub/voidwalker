@@ -17,7 +17,7 @@ export const firefoxManifest = {
     "128": "icons/icon.png",
   },
 
-  permissions: ["storage", "tabs", "alarms", "cookies", "<all_urls>"],
+  permissions: ["storage", "tabs", "alarms", "cookies", "notifications", "<all_urls>"],
 
   browser_action: {
     default_popup: "popup/popup.html",
