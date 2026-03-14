@@ -1,6 +1,6 @@
 {
   "name": "voidwalker-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Local MCP server for Voidwalker — streams browser storage, cookies, and DOM mutations to AI agents",
   "type": "module",
   "main": "./dist/index.js",
