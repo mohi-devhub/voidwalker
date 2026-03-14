@@ -220,6 +220,9 @@ npm run build:firefox --workspace=packages/extension
 - **Snapshot & restore** — one-command bug reproduction: `snapshot_browser_state()` / `restore_snapshot(id)`
 - **`analyze_page_state`** — AI explains why a page is broken based on cross-storage inconsistencies
 - **Panic button** — single-click toggle to instantly disconnect all AI access
+- **Console capture** — stream `console.error`, `console.warn`, and unhandled JS exceptions to the AI in real time
+- **Network interception** — intercept `fetch` and `XMLHttpRequest` calls so the AI can inspect request/response payloads, headers, and status codes without opening DevTools
+- **Performance timeline** — expose `window.performance` entries so the AI can diagnose slow page loads and long tasks
 
 ---
 
