@@ -6,7 +6,7 @@
 
 **Let AI debug your browser state.**
 
-[Issues](https://github.com/mohi-devhub/voidwalker/issues) · [Contributing](#contributing)
+[Issues](https://github.com/mohi-devhub/voidwalker/issues) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 
 <img src="assets/voidwalker-demo.gif" alt="Voidwalker demo" width="100%" />
 
@@ -228,7 +228,7 @@ npm run build:firefox --workspace=packages/extension
 
 ## Contributing
 
-Contributions are welcome. Feel free to open an issue or submit a pull request.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and areas that need help.
 
 ---
 
