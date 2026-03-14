@@ -95,7 +95,8 @@ npm run build
 **3. Start the MCP server**
 
 ```bash
-node packages/mcp-server/dist/index.js
+npm install -g voidwalker-mcp
+voidwalker-mcp
 ```
 
 On first run, a 256-bit auth token is generated at `~/.voidwalker/token` (mode `0600`).
@@ -116,8 +117,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "voidwalker": {
-      "command": "node",
-      "args": ["/absolute/path/to/voidwalker/packages/mcp-server/dist/index.js"]
+      "command": "voidwalker-mcp"
     }
   }
 }
@@ -126,7 +126,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ### Claude Code
 
 ```bash
-claude mcp add voidwalker -- node /absolute/path/to/voidwalker/packages/mcp-server/dist/index.js
+claude mcp add voidwalker voidwalker-mcp
 ```
 
 ### Cursor / SSE clients
@@ -185,6 +185,8 @@ Voidwalker handles auth tokens, session cookies, and API keys. The security mode
 - **URL scheme enforcement** — `navigate_tab` only accepts `http://` and `https://` URLs.
 - **postMessage scoping** — MAIN world ↔ ISOLATED world messaging is scoped to the page's own origin.
 - **WebSocket payload cap** — incoming messages are capped at 5 MB to prevent memory exhaustion.
+- **Domain allowlist** — restrict AI access to specific origins via the extension popup. Empty = allow all; add origins to lock down which sites the AI can read or write.
+- **Write confirmation** — enable "Confirm writes" in the popup to require Allow/Deny approval for every write operation before it executes.
 
 ---
 
@@ -214,9 +216,7 @@ npm run build:firefox --workspace=packages/extension
 
 ## Coming soon
 
-- **Domain allowlist** — restrict AI access to specific origins; deny all by default
 - **Storage key allowlist** — opt-in specific keys so `authToken` is never exposed unless explicitly allowed
-- **Write confirmation** — prompt before any storage mutation executes ("AI wants to set `featureFlag` → Allow?")
 - **Snapshot & restore** — one-command bug reproduction: `snapshot_browser_state()` / `restore_snapshot(id)`
 - **`analyze_page_state`** — AI explains why a page is broken based on cross-storage inconsistencies
 - **Panic button** — single-click toggle to instantly disconnect all AI access
