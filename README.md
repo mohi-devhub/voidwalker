@@ -10,7 +10,7 @@
 
 <img src="assets/voidwalker-demo.gif" alt="Voidwalker demo" width="100%" />
 
-![Version](https://img.shields.io/badge/version-1.0.0-informational) ![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen) ![MCP](https://img.shields.io/badge/MCP-compatible-blue) ![Chrome](https://img.shields.io/badge/Chrome-pending_review-yellow) ![Firefox](https://img.shields.io/badge/Firefox-MV2-orange) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![Version](https://img.shields.io/badge/version-1.0.0-informational) ![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen) ![MCP](https://img.shields.io/badge/MCP-compatible-blue) [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web_Store-brightgreen)](https://chromewebstore.google.com/detail/kdcfieaegcbifeiondmgdjkimohkfill?utm_source=item-share-cb) ![Firefox](https://img.shields.io/badge/Firefox-MV2-orange) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 </div>
 
@@ -82,8 +82,9 @@ npm run build
 
 *Chrome:*
 
-> The extension has been submitted to the Chrome Web Store and is pending review. Until it is approved, load it manually:
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/kdcfieaegcbifeiondmgdjkimohkfill?utm_source=item-share-cb).
 
+Or load manually:
 1. Open `chrome://extensions`
 2. Enable **Developer mode** (top right)
 3. Click **Load unpacked** → select `packages/extension/dist/`
